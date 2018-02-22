@@ -4,6 +4,7 @@ use std::io::prelude::*;
 use std::ffi::OsString;
 
 #[macro_use] extern crate text_io;
+extern crate ring;
 
 fn print_flush(output: &str) {
     print!("{}", output);
@@ -68,6 +69,16 @@ impl EncryptCommand {
 
 impl Command for EncryptCommand {
     fn run(&self) -> Result<(), String> {
+        use std::io;
+        use std::io::prelude::*;
+        use std::fs::File;
+
+        let mut f = File::open(&self.path).unwrap();
+
+        let mut buffer = String::new();
+        f.read_to_string(&mut buffer);
+
+        println!("Read: {}", buffer.len());
         Ok(())
     }
 }
