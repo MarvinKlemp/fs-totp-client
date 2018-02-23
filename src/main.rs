@@ -69,16 +69,51 @@ impl EncryptCommand {
 
 impl Command for EncryptCommand {
     fn run(&self) -> Result<(), String> {
-        use std::io;
         use std::io::prelude::*;
         use std::fs::File;
 
-        let mut f = File::open(&self.path).unwrap();
+        let mut buffer: Vec<u8> = Vec::new();
+        {
+            let mut f = File::open(&self.path).unwrap();
 
-        let mut buffer = String::new();
-        f.read_to_string(&mut buffer);
+            f.read_to_end(&mut buffer);
+        }
 
-        println!("Read: {}", buffer.len());
+        {
+            use ring::aead::*;
+            use ring::{pbkdf2, digest};
+
+            let password = b"password";
+            let salt = [0, 1, 2, 3, 4, 5, 6, 7];
+
+            let mut key = [0; 32];
+            pbkdf2::derive(&digest::SHA256, 10, &salt, &password[..], &mut key);
+
+            let mut encrypted = buffer.clone();
+            for _ in 0..CHACHA20_POLY1305.tag_len() {
+                encrypted.push(0);
+            }
+
+            let opening_key = OpeningKey::new(&CHACHA20_POLY1305, &key).unwrap();
+            let sealing_key = SealingKey::new(&CHACHA20_POLY1305, &key).unwrap();
+
+            use ring::rand::{SystemRandom, SecureRandom};
+            let random = SystemRandom::new();
+            let mut nonce = vec![0; 12];
+            random.fill(&mut nonce).unwrap();
+
+            seal_in_place(
+                &sealing_key,
+                &nonce,
+                &[],
+                &mut encrypted,
+                CHACHA20_POLY1305.tag_len()
+            ).unwrap();
+
+            let mut encrypted_file = File::create("test.txt").unwrap();
+            encrypted_file.write(&encrypted[..]);
+        }
+
         Ok(())
     }
 }
