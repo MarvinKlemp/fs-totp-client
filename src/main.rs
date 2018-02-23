@@ -1,7 +1,6 @@
 use std::env;
 use std::io;
 use std::io::prelude::*;
-use std::ffi::OsString;
 
 #[macro_use] extern crate text_io;
 extern crate ring;
@@ -29,15 +28,11 @@ fn main() {
 
         if let Some((command_name, arguments)) = command_vec.split_first() {
             if command_name== &"encrypt" {
-                let command: EncryptCommand;
+                let command = EncryptCommand{};
 
-                match EncryptCommand::create(arguments) {
-                    Some(cmd) => command = cmd,
-                    None => {println!("Unable to run command."); continue}
-                }
-
-                match command.run() {
-                    Ok(()) => println!("Successfully ran command"),
+                match command.run(arguments) {
+                    Ok(()) => println!("Successfully r\
+                    an command"),
                     Err(message) => println!("{}", message)
                 }
             }
@@ -46,35 +41,30 @@ fn main() {
 }
 
 trait Command {
-    fn run(&self) -> Result<(), String>;
+    fn run(&self, arguments: &[&str]) -> Result<(), &str>;
 }
 
 #[derive(Debug)]
-struct EncryptCommand {
-    path: OsString
-}
-
-impl EncryptCommand {
-    fn create(vec: &[&str]) -> Option<EncryptCommand> {
-
-        if vec.len() < 1 {
-            return None;
-        }
-
-        Some(EncryptCommand {
-            path: OsString::from(vec[0].to_string())
-        })
-    }
-}
+struct EncryptCommand;
 
 impl Command for EncryptCommand {
-    fn run(&self) -> Result<(), String> {
+    fn run(&self, arguments: &[&str]) -> Result<(), &str> {
+        use std::path::Path;
+
+        // @TODO: Fix ?
+        if arguments.len() < 3 {
+            return Err("No Paths specified.")
+        }
+
+        let file_path = Path::new(arguments[1]);
+        let target_path = Path::new(arguments[2]);
+
         use std::io::prelude::*;
         use std::fs::File;
 
         let mut buffer: Vec<u8> = Vec::new();
         {
-            let mut f = File::open(&self.path).unwrap();
+            let mut f = File::open(file_path).unwrap();
 
             f.read_to_end(&mut buffer);
         }
@@ -110,7 +100,7 @@ impl Command for EncryptCommand {
                 CHACHA20_POLY1305.tag_len()
             ).unwrap();
 
-            let mut encrypted_file = File::create("test.txt").unwrap();
+            let mut encrypted_file = File::create(target_path).unwrap();
             encrypted_file.write(&encrypted[..]);
         }
 
