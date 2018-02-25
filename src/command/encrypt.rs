@@ -44,7 +44,9 @@ impl Command for EncryptCommand {
             encrypted.push(0);
         }
 
+        let random = SystemRandom::new();
         let mut nonce = vec![0; 12];
+        random.fill(&mut nonce).unwrap();
 
         let encrypted_len = seal_in_place(
             &SealingKey::new(&CHACHA20_POLY1305, &key).unwrap(),
@@ -55,7 +57,7 @@ impl Command for EncryptCommand {
         )?;
 
         let mut encrypted_file = File::create(target_path)?;
-        encrypted_file.write(&encrypted[..]);
+        encrypted_file.write(&[&nonce[..], &encrypted[..]].concat());
 
         Ok(())
     }

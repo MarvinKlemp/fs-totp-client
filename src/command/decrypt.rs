@@ -28,8 +28,11 @@ impl Command for DecryptCommand {
         let target_path = Path::new(arguments[1]);
 
         let mut encrypted: Vec<u8> = Vec::new();
+        let mut nonce = vec![0; 12];
         {
             let mut f = File::open(file_path)?;
+
+            f.read_exact(&mut nonce)?;
             f.read_to_end(&mut encrypted)?;
         }
 
@@ -37,8 +40,6 @@ impl Command for DecryptCommand {
         let salt = [0, 1, 2, 3, 4, 5, 6, 7];
         let mut key = [0; 32];
         pbkdf2::derive(&digest::SHA256, 10, &salt, &password[..], &mut key);
-
-        let mut nonce = vec![0; 12];
 
         let seal_key = OpeningKey::new(&CHACHA20_POLY1305, &key).unwrap();
         let decrypted = open_in_place(
