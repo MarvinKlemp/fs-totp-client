@@ -9,6 +9,7 @@ pub trait Command {
 }
 
 pub mod encrypt;
+pub mod decrypt;
 
 #[derive(Debug)]
 pub struct InvalidInputError;

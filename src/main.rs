@@ -1,12 +1,12 @@
 #[macro_use] extern crate text_io;
 extern crate ring;
 
+use std::env;
+
 mod command;
 use command::Command;
 use command::encrypt::EncryptCommand;
-
-use std::env;
-
+use command::decrypt::DecryptCommand;
 
 fn print_flush(output: &str) {
     use std::io;
@@ -17,8 +17,6 @@ fn print_flush(output: &str) {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-
     // login
     print_flush("Input your username: ");
     let username: String = read!("{}\n");
@@ -36,6 +34,15 @@ fn main() {
             // @TODO: Command Handler
             if command_name== &"encrypt" {
                 let command = EncryptCommand::new();
+
+                match command.run(arguments) {
+                    Ok(()) => println!("Successfully ran command"),
+                    Err(err) => println!("{}", err)
+                }
+            }
+
+            if command_name== &"decrypt" {
+                let command = DecryptCommand::new();
 
                 match command.run(arguments) {
                     Ok(()) => println!("Successfully ran command"),

@@ -8,15 +8,15 @@ use ring::rand::{SystemRandom, SecureRandom};
 
 use super::{Command, Result, CommandError, InvalidInputError};
 
-pub struct EncryptCommand;
+pub struct DecryptCommand;
 
-impl EncryptCommand {
-    pub fn new() -> EncryptCommand {
-        EncryptCommand {}
+impl DecryptCommand {
+    pub fn new() -> DecryptCommand {
+        DecryptCommand {}
     }
 }
 
-impl Command for EncryptCommand {
+impl Command for DecryptCommand {
     fn run(&self, arguments: &[&str]) -> Result<()> {
         if arguments.len() < 2 {
             let err = InvalidInputError {};
@@ -27,35 +27,30 @@ impl Command for EncryptCommand {
         let file_path = Path::new(arguments[0]);
         let target_path = Path::new(arguments[1]);
 
-        let mut buffer: Vec<u8> = Vec::new();
+        let mut encrypted: Vec<u8> = Vec::new();
         {
             let mut f = File::open(file_path)?;
-            f.read_to_end(&mut buffer)?;
+            f.read_to_end(&mut encrypted)?;
         }
 
         let password = b"password";
         let salt = [0, 1, 2, 3, 4, 5, 6, 7];
-
         let mut key = [0; 32];
         pbkdf2::derive(&digest::SHA256, 10, &salt, &password[..], &mut key);
 
-        let mut encrypted = buffer.clone();
-        for _ in 0..CHACHA20_POLY1305.tag_len() {
-            encrypted.push(0);
-        }
-
         let mut nonce = vec![0; 12];
 
-        let encrypted_len = seal_in_place(
-            &SealingKey::new(&CHACHA20_POLY1305, &key).unwrap(),
+        let seal_key = OpeningKey::new(&CHACHA20_POLY1305, &key).unwrap();
+        let decrypted = open_in_place(
+            &seal_key,
             &nonce,
             &[],
-            &mut encrypted,
-            CHACHA20_POLY1305.tag_len()
+            0,
+            &mut encrypted
         )?;
 
-        let mut encrypted_file = File::create(target_path)?;
-        encrypted_file.write(&encrypted[..]);
+        let mut decrypted_file = File::create(target_path)?;
+        decrypted_file.write(&decrypted[..])?;
 
         Ok(())
     }
