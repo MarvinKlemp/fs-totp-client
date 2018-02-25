@@ -17,6 +17,10 @@ impl DecryptCommand {
 }
 
 impl Command for DecryptCommand {
+    fn name(&self) -> &str {
+        &"decrypt"
+    }
+
     fn run(&self, arguments: &[&str]) -> Result<()> {
         if arguments.len() < 2 {
             let err = InvalidInputError {};

@@ -17,6 +17,10 @@ impl EncryptCommand {
 }
 
 impl Command for EncryptCommand {
+    fn name(&self) -> &str {
+        &"encrypt"
+    }
+
     fn run(&self, arguments: &[&str]) -> Result<()> {
         if arguments.len() < 2 {
             let err = InvalidInputError {};
@@ -48,7 +52,7 @@ impl Command for EncryptCommand {
         let mut nonce = vec![0; 12];
         random.fill(&mut nonce).unwrap();
 
-        let encrypted_len = seal_in_place(
+        seal_in_place(
             &SealingKey::new(&CHACHA20_POLY1305, &key).unwrap(),
             &nonce,
             &[],
@@ -57,7 +61,7 @@ impl Command for EncryptCommand {
         )?;
 
         let mut encrypted_file = File::create(target_path)?;
-        encrypted_file.write(&[&nonce[..], &encrypted[..]].concat());
+        encrypted_file.write(&[&nonce[..], &encrypted[..]].concat())?;
 
         Ok(())
     }

@@ -7,6 +7,7 @@ mod command;
 use command::Command;
 use command::encrypt::EncryptCommand;
 use command::decrypt::DecryptCommand;
+use command::command_handler::CommandHandler;
 
 fn print_flush(output: &str) {
     use std::io;
@@ -24,6 +25,7 @@ fn main() {
     let password: String = read!("{}\n");
     println!("Successfully logged in as: {}", username);
 
+    let command_handler = CommandHandler::new();
     // run
     loop {
         print_flush("> ");
@@ -31,23 +33,11 @@ fn main() {
         let command_vec: Vec<&str> = command_string.split(' ').collect();
 
         if let Some((command_name, arguments)) = command_vec.split_first() {
-            // @TODO: Command Handler
-            if command_name== &"encrypt" {
-                let command = EncryptCommand::new();
+            command_handler.handle(command_name, arguments);
 
-                match command.run(arguments) {
-                    Ok(()) => println!("Successfully ran command"),
-                    Err(err) => println!("{}", err)
-                }
-            }
-
-            if command_name== &"decrypt" {
-                let command = DecryptCommand::new();
-
-                match command.run(arguments) {
-                    Ok(()) => println!("Successfully ran command"),
-                    Err(err) => println!("{}", err)
-                }
+            match command_handler.handle(command_name, arguments) {
+                Ok(()) => println!("Successfully ran command"),
+                Err(err) => println!("{}", err)
             }
         }
     }

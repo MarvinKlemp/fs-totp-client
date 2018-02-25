@@ -5,9 +5,12 @@ pub type CommandError = Box<std::error::Error>;
 pub type Result<T> = std::result::Result<T, CommandError>;
 
 pub trait Command {
+    fn name(&self) -> &str;
+
     fn run(&self, arguments: &[&str]) -> Result<()>;
 }
 
+pub mod command_handler;
 pub mod encrypt;
 pub mod decrypt;
 
