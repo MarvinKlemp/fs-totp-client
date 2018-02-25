@@ -1,5 +1,3 @@
-use command::Command;
-
 use std::path::Path;
 use std::io::prelude::*;
 use std::fs::File;
@@ -7,6 +5,8 @@ use std::fs::File;
 use ring::aead::*;
 use ring::{pbkdf2, digest};
 use ring::rand::{SystemRandom, SecureRandom};
+
+use super::{Command, Result, CommandError, InvalidInputError};
 
 pub struct EncryptCommand;
 
@@ -17,9 +17,11 @@ impl EncryptCommand {
 }
 
 impl Command for EncryptCommand {
-    fn run(&self, arguments: &[&str]) -> Result<(), &str> {
+    fn run(&self, arguments: &[&str]) -> Result<()> {
         if arguments.len() < 2 {
-            return Err("Wrong arguments supplies. Correct execution: encrypt path/to/file path/to/output")
+            let err = InvalidInputError {};
+
+            return Err(CommandError::from(err));
         }
 
         let file_path = Path::new(arguments[0]);
@@ -27,7 +29,7 @@ impl Command for EncryptCommand {
 
         let mut buffer: Vec<u8> = Vec::new();
         {
-            let mut f = File::open(file_path).unwrap();
+            let mut f = File::open(file_path)?;
             f.read_to_end(&mut buffer);
         }
 
@@ -52,9 +54,9 @@ impl Command for EncryptCommand {
             &[],
             &mut encrypted,
             CHACHA20_POLY1305.tag_len()
-        ).unwrap();
+        )?;
 
-        let mut encrypted_file = File::create(target_path).unwrap();
+        let mut encrypted_file = File::create(target_path)?;
         encrypted_file.write(&encrypted[..]);
 
         Ok(())

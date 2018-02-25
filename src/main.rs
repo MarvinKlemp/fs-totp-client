@@ -33,15 +33,13 @@ fn main() {
         let command_vec: Vec<&str> = command_string.split(' ').collect();
 
         if let Some((command_name, arguments)) = command_vec.split_first() {
-
             // @TODO: Command Handler
             if command_name== &"encrypt" {
-                let command
-                = EncryptCommand::new();
+                let command = EncryptCommand::new();
 
                 match command.run(arguments) {
                     Ok(()) => println!("Successfully ran command"),
-                    Err(message) => println!("{}", message)
+                    Err(err) => println!("{}", err)
                 }
             }
         }
